@@ -2,16 +2,45 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Manager</title>
     <style>
         body {
             margin: 0;
         }
+
+        .progress-bar-container {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #progress-bar{
+            width: 30%;
+            margin-top: 0.5%;
+            height: 2%;
+        }
+
+        label{
+            color: white;
+            font-size: 2rem;
+        }
     </style>
 </head>
 <body>
-    <script src="src/main.js" type="module"></script>
+<div class="progress-bar-container">
+    <label for="progress-bar">Loading...</label>
+    <progress id="progress-bar" value="0" max="100"></progress>
+</div>
+<script src="src/main.js" type="module"></script>
 </body>
 </html>

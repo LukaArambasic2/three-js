@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
 import {RGBELoader} from "three/examples/jsm/loaders/RGBELoader";
+import {load} from "three/addons/libs/opentype.module";
 
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -19,6 +20,17 @@ orbit.update()
 const grid = new THREE.GridHelper(30,30);
 scene.add(grid);
 
+const loadingManager = new THREE.LoadingManager();
+
+const progressBar = document.getElementById('progress-bar');
+loadingManager.onProgress = (url, loaded, total) => {progressBar.value = (loaded/total) * 100;};
+
+const progressBarContainer = document.querySelector('.progress-bar-container');
+loadingManager.onLoad = (url) => {progressBarContainer.style.display = 'none';};
+
+loadingManager.onError = (error) => {
+    console.log("This is my error!", error);};
+
 // const ambientLight = new THREE.AmbientLight(0xffffff);
 // scene.add(ambientLight);
 //
@@ -26,9 +38,9 @@ scene.add(grid);
 // directionalLight.position.set(10, 11, 7);
 // scene.add(directionalLight);
 
-const gltfLoader = new GLTFLoader();
+const gltfLoader = new GLTFLoader(loadingManager);
 
-const rgbeLoader = new RGBELoader();
+const rgbeLoader = new RGBELoader(loadingManager);
 
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -39,7 +51,7 @@ rgbeLoader.load('/environment.hdr', texture => {
     texture.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = texture;
 
-    gltfLoader.load('/porsche.glb', gltf => {
+    gltfLoader.load('/free_1975_porsche_911_930_turbo/scene.gltf', gltf => {
         const model = gltf.scene;
         scene.add(model);
 
