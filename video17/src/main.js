@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import * as YUKA from 'yuka';
-import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
 
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -17,61 +16,42 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 0.5, 0.5);
 scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(0, 10, 10);
+directionalLight.position.set(0, 10, );
 scene.add(directionalLight);
 
-// const vehicleGeometry = new THREE.ConeGeometry(0.1,0.5,8);
-// vehicleGeometry.rotateX(Math.PI/2);
-// const vehicleMaterial = new THREE.MeshNormalMaterial();
-// const vehicleMesh = new THREE.Mesh(vehicleGeometry, vehicleMaterial);
-// vehicleMesh.matrixAutoUpdate = false;
-// scene.add(vehicleMesh);
+const vehicleGeometry = new THREE.ConeGeometry(0.1,0.5,8);
+vehicleGeometry.rotateX(Math.PI/2);
+const vehicleMaterial = new THREE.MeshNormalMaterial();
+const vehicleMesh = new THREE.Mesh(vehicleGeometry, vehicleMaterial);
+vehicleMesh.matrixAutoUpdate = false;
+scene.add(vehicleMesh);
 
 const vehicle = new YUKA.Vehicle();
-vehicle.scale.set(0.15,0.15,0.15)
 const sync = (entity, renderComponent) => {
     renderComponent.matrix.copy(entity.worldMatrix);
 }
+vehicle.setRenderComponent(vehicleMesh, sync);
+
 
 const entityManager = new YUKA.EntityManager();
 entityManager.add(vehicle);
 
-const loader = new GLTFLoader();
-const group = new THREE.Group();
-loader.load('/Striker.gltf', gltf => {
-    const model = gltf.scene;
-    model.matrixAutoUpdate = false;
-    group.add(model);
-    scene.add(group);
-    vehicle.setRenderComponent(model, sync);
-
-
-})
-
-// const targetGeometry = new THREE.SphereGeometry(0.1);
-// const targetMaterial = new THREE.MeshBasicMaterial({color: 0xffea00});
-// const targetMesh = new THREE.Mesh(targetGeometry, targetMaterial);
-// targetMesh.matrixAutoUpdate = false;
-// scene.add(targetMesh);
+const targetGeometry = new THREE.SphereGeometry(0.1);
+const targetMaterial = new THREE.MeshBasicMaterial({color: 0xffea00});
+const targetMesh = new THREE.Mesh(targetGeometry, targetMaterial);
+scene.add(targetMesh);
 
 
 
-const target = new YUKA.GameEntity();
-//target.setRenderComponent(targetMesh, sync);
-entityManager.add(target);
+const target = new YUKA.Vector3();
+const fleeBehavior = new YUKA.FleeBehavior(target, 2);
 
-const arriveBehavior = new YUKA.ArriveBehavior(target.position, 3, 0.5);
-vehicle.steering.add(arriveBehavior);
+vehicle.steering.add(fleeBehavior);
 vehicle.position.set(-2, 0, -2);
 
 vehicle.maxSpeed = 1.5;
 
 const mousePosition = new THREE.Vector2();
-
-window.addEventListener('mousemove', e => {
-    mousePosition.x = (e.clientX / window.innerWidth) * 2 - 1;
-    mousePosition.y = -(e.clientY / window.innerHeight) * 2 + 1;
-})
 
 const planeGeo = new THREE.PlaneGeometry(25, 25);
 const planeMat = new THREE.MeshBasicMaterial({visible: false});
@@ -83,12 +63,16 @@ scene.add(planeMesh);
 const raycaster = new THREE.Raycaster();
 
 window.addEventListener('click', e => {
+    mousePosition.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mousePosition.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
     raycaster.setFromCamera(mousePosition, camera);
     const intersects = raycaster.intersectObjects(scene.children);
 
     for (let i = 0; i < intersects.length; i++) {
         if (intersects[i].object.name ==='plane') {
-            target.position.set(intersects[i].point.x, 0, intersects[i].point.z);
+            targetMesh.position.set(intersects[i].point.x, 0, intersects[i].point.z);
+            target.set(intersects[i].point.x, 0, intersects[i].point.z);
         }
     }
 })
@@ -106,7 +90,6 @@ const time = new YUKA.Time();
 const animate = (t) => {
     const delta = time.update().getDelta();
     entityManager.update(delta);
-    group.position.y = 0.125 * Math.sin(t / 500);
     renderer.render(scene, camera);
 
 };
