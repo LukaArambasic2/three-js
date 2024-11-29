@@ -28,28 +28,30 @@ loader.load(hdrTextureURL, texture => {
     scene.environment = texture;
 
     const sphere = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 50, 50),
-        new THREE.MeshStandardMaterial({
+        new THREE.SphereGeometry(2, 50, 50),
+        new THREE.MeshPhysicalMaterial({
             roughness: 0,
-            metalness: 0.5,
+            metalness: 0,
             color: 0xffEA00,
+            transmission: 1,
+            ior: 2.33,
         })
     )
     sphere.position.set(-1, 0, -1);
     scene.add(sphere);
 
 
-    const sphere2 = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 50, 50),
-        new THREE.MeshStandardMaterial({
-            roughness: 0,
-            metalness: 0.5,
-            color: 0x00FF00,
-            //envMap: texture,
-        })
-    )
-    sphere2.position.set(1, 0, 1);
-    scene.add(sphere2);
+    // const sphere2 = new THREE.Mesh(
+    //     new THREE.SphereGeometry(1, 50, 50),
+    //     new THREE.MeshStandardMaterial({
+    //         roughness: 0,
+    //         metalness: 0.5,
+    //         color: 0x00FF00,
+    //         //envMap: texture,
+    //     })
+    // )
+    // sphere2.position.set(1, 0, 1);
+    // scene.add(sphere2);
 
 })
 
