@@ -4,7 +4,15 @@ import * as YUKA from 'yuka';
 import gsap from 'gsap';
 import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader";
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils';
-import {BLUEVEHICLESPATHS, REDVEHICLESPATHS, YELLOWVEHICLESPATHS, ANSWERSTEXT, WHEELS} from "./constants";
+import {
+    BLUEVEHICLESPATHS,
+    REDVEHICLESPATHS,
+    YELLOWVEHICLESPATHS,
+    ANSWERSTEXT,
+    WHEELS,
+    BLINKINGLIGHTS,
+    LISTENER, AUDIOS
+} from "./constants";
 
 const entityManager = new YUKA.EntityManager();
 
@@ -31,7 +39,7 @@ const option1Text = document.getElementById('a1-text');
 const option2Text = document.getElementById('a2-text');
 const option3Text = document.getElementById('a3-text');
 
-let clicked = false;
+let clicked = true;
 let questionNumber = 1;
 let cameraX = 3;
 let cameraZ = 144;
@@ -41,7 +49,12 @@ const redCars = [];
 const blueCars = [];
 let carToAnimate = 0;
 
+const blinkGeo = new THREE.SphereGeometry(0.1, 32, 32);
+const blinkMat = new THREE.MeshBasicMaterial({color: 0xff0000});
+const blinkMesh = new THREE.Mesh(blinkGeo, blinkMat);
 
+const score = document.querySelector('.score span');
+let scoreVal = 0;
 
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -53,6 +66,8 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(3, 10, 218);
 camera.lookAt(scene.position);
+
+camera.add(LISTENER);
 
 const ambientLight = new THREE.AmbientLight(0xe1e1e1, 0.3)
 scene.add(ambientLight);
@@ -87,7 +102,17 @@ function sync(entity, renderComponent) {
     renderComponent.matrix.copy(entity.worldMatrix);
 }
 
-function createCarV(model, path, entityManager, yRotation) {
+function createBlinkingLight(group, positions) {
+    const bClone1 = blinkMesh.clone();
+    bClone1.position.copy(positions.front);
+    group.add(bClone1);
+
+    const bClone2 = blinkMesh.clone();
+    bClone2.position.copy(positions.back);
+    group.add(bClone2);
+}
+
+function createCarV(model, path, entityManager, yRotation, blinkingLight) {
     const group = new THREE.Group();
     scene.add(group);
     group.matrixAutoUpdate = false;
@@ -113,6 +138,10 @@ function createCarV(model, path, entityManager, yRotation) {
 
     v.rotation.fromEuler(0, yRotation, 0);
 
+    if (blinkingLight) {
+        createBlinkingLight(group, blinkingLight);
+    }
+
     const vehicleAll = {vehicle: v, modelGroup: car};
     return vehicleAll;
 }
@@ -121,11 +150,11 @@ loader.load('/SUV.glb', glb => {
     const model = glb.scene;
     console.log(YELLOWVEHICLESPATHS[0]);
     const v1 = createCarV(model, YELLOWVEHICLESPATHS[0], entityManager, Math.PI);
-    const v2 = createCarV(model, YELLOWVEHICLESPATHS[1], entityManager, Math.PI);
-    const v3 = createCarV(model, YELLOWVEHICLESPATHS[2], entityManager, Math.PI / 2);
-    const v4 = createCarV(model, YELLOWVEHICLESPATHS[3], entityManager, Math.PI);
-    const v5 = createCarV(model, YELLOWVEHICLESPATHS[4], entityManager, -Math.PI / 2);
-    const v6 = createCarV(model, YELLOWVEHICLESPATHS[5], entityManager, Math.PI);
+    const v2 = createCarV(model, YELLOWVEHICLESPATHS[1], entityManager, Math.PI, BLINKINGLIGHTS.yellow.right);
+    const v3 = createCarV(model, YELLOWVEHICLESPATHS[2], entityManager, Math.PI / 2, BLINKINGLIGHTS.yellow.left);
+    const v4 = createCarV(model, YELLOWVEHICLESPATHS[3], entityManager, Math.PI, BLINKINGLIGHTS.yellow.left);
+    const v5 = createCarV(model, YELLOWVEHICLESPATHS[4], entityManager, -Math.PI / 2, BLINKINGLIGHTS.yellow.right);
+    const v6 = createCarV(model, YELLOWVEHICLESPATHS[5], entityManager, Math.PI, BLINKINGLIGHTS.yellow.left);
     const v7 = createCarV(model, YELLOWVEHICLESPATHS[6], entityManager, -Math.PI / 2);
 
     yellowCars.push(v1, v2, v3, v4, v5, v6, v7);
@@ -133,12 +162,12 @@ loader.load('/SUV.glb', glb => {
 
 loader.load('/red.glb', function(glb) {
     const model = glb.scene;
-    const v1 = createCarV(model, REDVEHICLESPATHS[0], entityManager, 0);
-    const v2 = createCarV(model, REDVEHICLESPATHS[1], entityManager, 0);
-    const v3 = createCarV(model, REDVEHICLESPATHS[2], entityManager, -Math.PI / 2);
+    const v1 = createCarV(model, REDVEHICLESPATHS[0], entityManager, 0, BLINKINGLIGHTS.red.left);
+    const v2 = createCarV(model, REDVEHICLESPATHS[1], entityManager, 0, BLINKINGLIGHTS.red.left);
+    const v3 = createCarV(model, REDVEHICLESPATHS[2], entityManager, -Math.PI / 2, BLINKINGLIGHTS.red.right);
     const v4 = createCarV(model, REDVEHICLESPATHS[3], entityManager, 0);
-    const v5 = createCarV(model, REDVEHICLESPATHS[4], entityManager, Math.PI / 2);
-    const v6 = createCarV(model, REDVEHICLESPATHS[5], entityManager, 0);
+    const v5 = createCarV(model, REDVEHICLESPATHS[4], entityManager, Math.PI / 2, BLINKINGLIGHTS.red.left);
+    const v6 = createCarV(model, REDVEHICLESPATHS[5], entityManager, 0, BLINKINGLIGHTS.red.right);
     const v7 = createCarV(model, REDVEHICLESPATHS[6], entityManager, Math.PI / 2);
     redCars.push(v1, v2, v3, v4, v5, v6, v7);
 });
@@ -148,7 +177,7 @@ loader.load('/blue.glb', function(glb) {
     const v1 = createCarV(model, BLUEVEHICLESPATHS[0], entityManager, Math.PI / 2);
     const v2 = createCarV(model, BLUEVEHICLESPATHS[1], entityManager, Math.PI / 2);
     const v3 = createCarV(model, BLUEVEHICLESPATHS[2], entityManager, 0);
-    const v4 = createCarV(model, BLUEVEHICLESPATHS[3], entityManager, Math.PI / 2,);
+    const v4 = createCarV(model, BLUEVEHICLESPATHS[3], entityManager, Math.PI / 2, BLINKINGLIGHTS.blue.left);
     const v7 = createCarV(model, BLUEVEHICLESPATHS[4], entityManager, Math.PI);
     blueCars.push(v1, v2, v3, v4, v7);
 });
@@ -176,18 +205,31 @@ startButton.addEventListener('click', () => {
     .to(question, {
         autoAlpha: 1,
         duration: 0.2,
+        onComplete: function() {
+            AUDIOS[questionNumber - 1].question.play();
+        }
     }, '+=0.7')
     .to(option1, {
         rotateX: 0,
         duration: 0.2,
+        onComplete: function() {
+            AUDIOS[questionNumber - 1].answer1.play();
+        }
     }, '+=1')
     .to(option2, {
         rotateX: 0,
         duration: 0.2,
+        onComplete: function() {
+            AUDIOS[questionNumber - 1].answer2.play();
+        }
     }, '+=1')
     .to(option3, {
         rotateX: 0,
         duration: 0.2,
+        onComplete: function() {
+            AUDIOS[questionNumber - 1].answer3.play();
+            clicked = false;
+        }
     }, '+=1')
 })
 
@@ -245,11 +287,7 @@ function animateCar(delay, car, wheels, last) {
             x: '+=60',
             duration: 20,
         });
-        gsap.to(car.modelGroup.getObjectByName(wheels.backRight).rotation, {
-            x: '+=60',
-            duration: 20,
-        });
-        gsap.to(car.modelGroup.getObjectByName(wheels.backLeft).rotation, {
+        gsap.to(car.modelGroup.getObjectByName(wheels.back).rotation, {
             x: '+=60',
             duration: 20,
         });
@@ -269,43 +307,70 @@ function chooseAnswer(option) {
             animateCar(3000, yellowCars[carToAnimate], WHEELS.yellowCar, false);
             animateCar(0, blueCars[carToAnimate], WHEELS.redCar, false);
             animateCar(5000, redCars[carToAnimate], WHEELS.blueCar, true);
+            if (option.id === 'option1') {
+                scoreVal++;
+                score.innerText = scoreVal;
+            }
             break;
         case 1:
             showAnswerSymbol('correct', 'incorrect', 'incorrect');
             animateCar(3000, yellowCars[carToAnimate], WHEELS.yellowCar);
             animateCar(5000, redCars[carToAnimate], WHEELS.redCar, true);
             animateCar(0, blueCars[carToAnimate], WHEELS.blueCar);
+            if (option.id === 'option1') {
+                scoreVal++;
+                score.innerText = scoreVal;
+            }
             break;
         case 2:
             showAnswerSymbol('incorrect', 'incorrect', 'correct');
             animateCar(3000, yellowCars[carToAnimate], WHEELS.yellowCar);
             animateCar(0, redCars[carToAnimate], WHEELS.redCar);
             animateCar(5000, blueCars[carToAnimate], WHEELS.blueCar, true);
+            if (option.id === 'option3') {
+                scoreVal++;
+                score.innerText = scoreVal;
+            }
             break;
         case 3:
             showAnswerSymbol('correct', 'incorrect', 'incorrect');
             animateCar(5000, yellowCars[carToAnimate], WHEELS.yellowCar, true);
             animateCar(3000, redCars[carToAnimate], WHEELS.redCar);
             animateCar(0, blueCars[carToAnimate], WHEELS.blueCar);
+            if (option.id === 'option1') {
+                scoreVal++;
+                score.innerText = scoreVal;
+            }
             break;
         case 4:
             showAnswerSymbol('incorrect', 'correct', 'incorrect');
             animateCar(0, yellowCars[carToAnimate], WHEELS.yellowCar);
             animateCar(3000, redCars[carToAnimate], WHEELS.redCar, true);
             //animateCar(0, blueCars[carToAnimate], null);
+            if (option.id === 'option2') {
+                scoreVal++;
+                score.innerText = scoreVal;
+            }
             break;
         case 5:
             showAnswerSymbol('correct', 'incorrect', 'incorrect');
             animateCar(3000, yellowCars[carToAnimate], WHEELS.yellowCar, true);
             animateCar(0, redCars[carToAnimate], WHEELS.redCar);
             //animateCar(0, blueCars[carToAnimate], null);
-
+            if (option.id === 'option1') {
+                scoreVal++;
+                score.innerText = scoreVal;
+            }
             break;
         case 6:
             showAnswerSymbol('incorrect', 'correct', 'incorrect');
             animateCar(3000, yellowCars[carToAnimate], WHEELS.yellowCar, true);
             animateCar(3000, redCars[carToAnimate], WHEELS.redCar);
             animateCar(0, blueCars[carToAnimate - 2], WHEELS.blueCar);
+            if (option.id === 'option3') {
+                scoreVal++;
+                score.innerText = scoreVal;
+            }
             break;
         default:
             break;
@@ -349,7 +414,6 @@ function changeOptionsText(questionText, opt1, opt2, opt3) {
 }
 
 nextQuestionBtn.addEventListener('click', () => {
-    clicked = false;
     questionNumber++;
     switch (questionNumber) {
         case 2:
@@ -411,20 +475,40 @@ nextQuestionBtn.addEventListener('click', () => {
     .to(question, {
         autoAlpha: 1,
         duration: 0.2,
+        onComplete: function () {
+            AUDIOS[questionNumber - 1].question.play();
+        }
     }, '-=0.5').to(option1, {
         rotateX: 0,
         duration: 0.2,
+        onComplete: function () {
+            AUDIOS[questionNumber - 1].answer1.play();
+        }
     },'+=1').to(option2, {
         rotateX: 0,
         duration: 0.2,
+        onComplete: function () {
+            AUDIOS[questionNumber - 1].answer2.play();
+        }
     },'+=1').to(option3, {
         rotateX: 0,
         duration: 0.2,
+        onComplete: function () {
+            AUDIOS[questionNumber - 1].answer3.play();
+            clicked = false;
+        }
     },'+=1')
 })
 
 const time = new YUKA.Time();
-const animate = () => {
+
+const animate = (t) => {
+    if (Math.sin(t / 130)> 0) {
+        blinkMesh.material.color.setHex(0xDC2F02);
+    } else {
+        blinkMesh.material.color.setHex(0xFF8300);
+    }
+
     const delta = time.update().getDelta();
     try {
         entityManager.update(delta); // Update the entity manager
